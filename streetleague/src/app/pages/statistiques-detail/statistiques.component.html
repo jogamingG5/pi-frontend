@@ -1,0 +1,195 @@
+<div class="dashboard-container">
+  <div class="page-header">
+    <h1 class="page-title">📊 Statistiques des équipes</h1>
+    <p class="page-subtitle">Lecture rapide, contrastes plus forts et indicateurs plus lisibles</p>
+  </div>
+
+  <section class="search-panel">
+    <div class="search-panel-header">
+      <span>🔍</span>
+      <h2 class="search-panel-title">Filtrer les statistiques</h2>
+    </div>
+
+    <div class="filter-chips">
+      <button class="chip" [class.active]="filterBy === 'all'" type="button" (click)="filterBy = 'all'; loadAllStatistiques()">Tous</button>
+      <button class="chip" [class.active]="filterBy === 'team'" type="button" (click)="filterBy = 'team'">Par équipe</button>
+      <button class="chip" [class.active]="filterBy === 'sport'" type="button" (click)="filterBy = 'sport'">Par sport</button>
+    </div>
+
+    <div *ngIf="filterBy === 'all'" class="grid grid-3">
+      <div class="input-group">
+        <label class="label">ID équipe</label>
+        <div class="input-with-icon">
+          <span class="input-icon">👥</span>
+          <input class="input-field" type="text" placeholder="Ex: TEAM_01" [(ngModel)]="teamId" />
+        </div>
+      </div>
+      <div class="input-group">
+        <label class="label">ID sport</label>
+        <div class="input-with-icon">
+          <span class="input-icon">⚽</span>
+          <input class="input-field" type="text" placeholder="Ex: SPORT_01" [(ngModel)]="sportId" />
+        </div>
+      </div>
+      <div class="input-group" style="justify-content:end;">
+        <label class="label">&nbsp;</label>
+        <button class="btn btn-primary" type="button" (click)="searchByTeamAndSport()">🔎 Rechercher</button>
+      </div>
+    </div>
+
+    <div *ngIf="filterBy === 'team'" class="grid grid-2">
+      <div class="input-group">
+        <label class="label">ID équipe</label>
+        <div class="input-with-icon">
+          <span class="input-icon">👥</span>
+          <input class="input-field" type="text" placeholder="Ex: TEAM_01" [(ngModel)]="teamId" />
+        </div>
+      </div>
+      <div class="input-group" style="justify-content:end;">
+        <label class="label">&nbsp;</label>
+        <button class="btn btn-primary" type="button" (click)="searchByTeam()">🔎 Rechercher</button>
+      </div>
+    </div>
+
+    <div *ngIf="filterBy === 'sport'" class="grid grid-2">
+      <div class="input-group">
+        <label class="label">ID sport</label>
+        <div class="input-with-icon">
+          <span class="input-icon">⚽</span>
+          <input class="input-field" type="text" placeholder="Ex: SPORT_01" [(ngModel)]="sportId" />
+        </div>
+      </div>
+      <div class="input-group" style="justify-content:end;">
+        <label class="label">&nbsp;</label>
+        <button class="btn btn-primary" type="button" (click)="searchBySport()">🔎 Rechercher</button>
+      </div>
+    </div>
+  </section>
+
+  <div *ngIf="error" class="alert alert-error">
+    <span class="alert-icon">⚠️</span>
+    <div>{{ error }}</div>
+  </div>
+
+  <div *ngIf="loading" class="loading-container">
+    <div class="spinner"></div>
+    <p class="loading-text">Chargement des statistiques...</p>
+  </div>
+
+  <section *ngIf="!loading && statistiques.length > 0" class="dashboard-card" style="padding: 1.25rem; margin-bottom: 1.5rem;">
+    <h3 class="section-title">Équipes disponibles</h3>
+    <div class="grid grid-3">
+      <button
+        *ngFor="let stats of statistiques"
+        type="button"
+        class="card"
+        [class.selected]="selectedStatistiques?.id === stats.id"
+        (click)="selectStatistiques(stats)"
+        style="text-align:left;"
+      >
+        <div style="display:flex; justify-content:space-between; gap:1rem; align-items:start; margin-bottom:0.75rem;">
+          <div>
+            <div style="font-weight:800; font-size:1.05rem;">{{ stats.teamId }}</div>
+            <div class="page-subtitle" style="font-size:0.82rem;">Sport: {{ stats.sportId }}</div>
+          </div>
+          <span class="badge badge-primary">{{ stats.nbMatchsJoues }} matchs</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; gap:0.75rem; flex-wrap:wrap;">
+          <span class="badge badge-success">{{ stats.nbVictoires }} V</span>
+          <span class="badge badge-danger">{{ stats.nbDefaites }} D</span>
+          <span class="badge badge-neutral">{{ stats.nbNuls }} N</span>
+        </div>
+      </button>
+    </div>
+  </section>
+
+  <section *ngIf="!loading && selectedStatistiques" class="space-y-lg">
+    <div class="dashboard-card" style="padding: 1.25rem;">
+      <h2 class="page-title" style="font-size: 1.8rem; margin-bottom: 0.35rem;">{{ selectedStatistiques.teamId }}</h2>
+      <p class="page-subtitle">Sport: {{ selectedStatistiques.sportId }}</p>
+    </div>
+
+    <div class="grid grid-4">
+      <div class="stat-card">
+        <div class="stat-label">Matchs joués</div>
+        <div class="stat-value">{{ selectedStatistiques.nbMatchsJoues }}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Points</div>
+        <div class="stat-value">{{ getNbPointsTotal(selectedStatistiques) }}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Diff. buts</div>
+        <div class="stat-value" [style.color]="getDifferenceButsGoal(selectedStatistiques) >= 0 ? 'var(--success)' : 'var(--danger)'">
+          {{ getDifferenceButsGoal(selectedStatistiques) >= 0 ? '+' : '' }}{{ getDifferenceButsGoal(selectedStatistiques) }}
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Taux victoire</div>
+        <div class="stat-value" style="font-size:2rem; color:var(--warning);">{{ (getTauxVictoire(selectedStatistiques) || 0).toFixed(1) }}%</div>
+      </div>
+    </div>
+
+    <div class="grid grid-3">
+      <div class="dashboard-card" style="padding:1.25rem;">
+        <h3 class="section-title">📊 Résultats</h3>
+        <div class="grid" style="gap:0.75rem;">
+          <div class="card" style="display:flex; justify-content:space-between; align-items:center; padding:0.9rem 1rem;"> <strong>Victoires</strong> <span class="badge badge-success">{{ selectedStatistiques.nbVictoires }}</span></div>
+          <div class="card" style="display:flex; justify-content:space-between; align-items:center; padding:0.9rem 1rem;"> <strong>Défaites</strong> <span class="badge badge-danger">{{ selectedStatistiques.nbDefaites }}</span></div>
+          <div class="card" style="display:flex; justify-content:space-between; align-items:center; padding:0.9rem 1rem;"> <strong>Nuls</strong> <span class="badge badge-neutral">{{ selectedStatistiques.nbNuls }}</span></div>
+        </div>
+      </div>
+
+      <div class="dashboard-card" style="padding:1.25rem;">
+        <h3 class="section-title">⚽ Buts</h3>
+        <div class="grid" style="gap:0.75rem;">
+          <div class="card" style="display:flex; justify-content:space-between; align-items:center; padding:0.9rem 1rem;"> <strong>Marqués</strong> <span class="badge badge-success">{{ selectedStatistiques.nbButsMarques }}</span></div>
+          <div class="card" style="display:flex; justify-content:space-between; align-items:center; padding:0.9rem 1rem;"> <strong>Encaissés</strong> <span class="badge badge-danger">{{ selectedStatistiques.nbButsEncaisses }}</span></div>
+          <div class="card" style="padding:0.9rem 1rem;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:0.5rem;">
+              <strong>Moyenne / match</strong>
+              <span class="page-subtitle" style="font-size:0.8rem;">attaque / défense</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; gap:0.75rem; font-size:0.9rem;">
+              <span style="color:var(--success); font-weight:700;">Pour: {{ getMoyenneButsMarques(selectedStatistiques).toFixed(2) }}</span>
+              <span style="color:var(--danger); font-weight:700;">Contre: {{ getMoyenneButsEncaisses(selectedStatistiques).toFixed(2) }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="dashboard-card" style="padding:1.25rem;">
+        <h3 class="section-title">🎯 Performance</h3>
+        <div class="card" style="padding:1rem;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
+            <strong [ngClass]="getPerformanceClass(getTauxVictoire(selectedStatistiques))">{{ getPerformanceIcon(getTauxVictoire(selectedStatistiques)) }} Taux victoire</strong>
+            <span class="badge badge-primary">{{ (getTauxVictoire(selectedStatistiques) || 0).toFixed(1) }}%</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" [style.width.%]="getTauxVictoire(selectedStatistiques)"></div>
+          </div>
+          <p class="page-subtitle" style="margin-top:0.75rem; font-size:0.82rem;">Lecture visuelle instantanée de la forme actuelle.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="dashboard-card" style="padding:1rem 1.25rem;">
+      <div class="grid grid-2">
+        <div>
+          <div class="label">Créé le</div>
+          <div>{{ selectedStatistiques.createdAt | date: 'short' }}</div>
+        </div>
+        <div>
+          <div class="label">Mis à jour le</div>
+          <div>{{ selectedStatistiques.updatedAt | date: 'short' }}</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div *ngIf="!loading && statistiques.length === 0" class="dashboard-card" style="padding:3rem 1.5rem; text-align:center;">
+    <div style="font-size:3rem; margin-bottom:0.75rem;">📊</div>
+    <h3 style="font-size:1.2rem; font-weight:800; margin-bottom:0.5rem;">Aucune statistique disponible</h3>
+    <p class="page-subtitle">Aucune donnée n’a encore été chargée.</p>
+  </div>
+</div>

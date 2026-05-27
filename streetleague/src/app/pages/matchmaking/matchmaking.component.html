@@ -1,0 +1,143 @@
+<div class="matchmaking-container">
+  <!-- Header -->
+  <div class="matchmaking-header">
+    <h1>⚡ Matchmaking Engine</h1>
+    <p>Generate perfectly balanced match suggestions using our Elo-like algorithm</p>
+  </div>
+
+  <!-- Control Panel -->
+  <div class="control-panel">
+    <div class="form-group">
+      <label for="event-select">Select Event</label>
+      <select id="event-select" [(ngModel)]="selectedEventId" class="form-control">
+        <option value="">-- Choose Event --</option>
+        <option *ngFor="let event of events" [value]="event.id">
+          {{ event.name }}
+        </option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="sport-select">Select Sport</label>
+      <select id="sport-select" [(ngModel)]="selectedSportId" class="form-control">
+        <option value="">-- Choose Sport --</option>
+        <option *ngFor="let sport of sports" [value]="sport">
+          {{ sport | titlecase }}
+        </option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="format-select">Format</label>
+      <select id="format-select" [(ngModel)]="selectedFormat" class="form-control">
+        <option value="roundrobin">Round Robin</option>
+        <option value="suisse">Swiss System</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="round-input">Round Number</label>
+      <input id="round-input" type="number" [(ngModel)]="roundNumber" min="1" max="20" class="form-control">
+    </div>
+
+    <div class="button-group">
+      <button (click)="generateSuggestions()" [disabled]="loading" class="btn btn-primary">
+        <span *ngIf="!loading">🎯 Generate Suggestions</span>
+        <span *ngIf="loading">⏳ Generating...</span>
+      </button>
+      <button (click)="clearSuggestions()" class="btn btn-secondary">Clear</button>
+    </div>
+  </div>
+
+  <!-- Status Messages -->
+  <div *ngIf="error" class="alert alert-danger">
+    <strong>Error:</strong> {{ error }}
+  </div>
+
+  <div *ngIf="success" class="alert alert-success">
+    <strong>Success:</strong> {{ success }}
+  </div>
+
+  <!-- Suggestions Grid -->
+  <div class="suggestions-container" *ngIf="suggestions.length > 0">
+    <div class="suggestions-header">
+      <h2>Suggested Matchups</h2>
+      <span class="count-badge">{{ suggestions.length }} matches</span>
+    </div>
+
+    <div class="suggestions-grid">
+      <div *ngFor="let suggestion of suggestions; let i = index" class="suggestion-card">
+        
+        <!-- Card Header with Priority -->
+        <div class="card-header">
+          <div class="match-number">#{{ i + 1 }}</div>
+          <div class="priority-indicator" [style.background-color]="getBalanceColor(suggestion.balanceScore)">
+            <span class="priority-label">Balance: {{ formatBalancePercent(suggestion.balanceScore) }}%</span>
+          </div>
+        </div>
+
+        <!-- Team A -->
+        <div class="team-section team-a">
+          <div class="team-name">{{ suggestion.teamAName || suggestion.teamAId }}</div>
+          <div class="team-badge" *ngIf="getWinnerBadge(suggestion, suggestion.teamAId)">
+            {{ getWinnerBadge(suggestion, suggestion.teamAId) }}
+          </div>
+        </div>
+
+        <!-- VS Divider -->
+        <div class="vs-divider">VS</div>
+
+        <!-- Team B -->
+        <div class="team-section team-b">
+          <div class="team-name">{{ suggestion.teamBName || suggestion.teamBId }}</div>
+          <div class="team-badge" *ngIf="getWinnerBadge(suggestion, suggestion.teamBId)">
+            {{ getWinnerBadge(suggestion, suggestion.teamBId) }}
+          </div>
+        </div>
+
+        <!-- Balance Score Bar -->
+        <div class="balance-bar-container">
+          <div class="balance-bar">
+            <div class="balance-indicator" 
+              [style.left.%]="suggestion.balanceScore * 100"
+              [style.background-color]="getBalanceColor(suggestion.balanceScore)">
+            </div>
+          </div>
+          <div class="balance-labels">
+            <span class="team-label">{{ suggestion.teamAName || 'Team A' }}</span>
+            <span class="balance-label">Balanced</span>
+            <span class="team-label">{{ suggestion.teamBName || 'Team B' }}</span>
+          </div>
+        </div>
+
+        <!-- Statistics -->
+        <div class="stats-section">
+          <div class="stat-item">
+            <span class="stat-label">Balance Score</span>
+            <span class="stat-value">{{ (suggestion.balanceScore * 100).toFixed(1) }}%</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Predicted Winner</span>
+            <span class="stat-value">{{ (suggestion.predictedWinnerId === suggestion.teamAId ? suggestion.teamAName : suggestion.teamBName) || 'TBD' }}</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Confidence</span>
+            <span class="stat-value">{{ suggestion.confidencePercent.toFixed(0) }}%</span>
+          </div>
+        </div>
+
+        <!-- Action Button -->
+        <button class="btn btn-primary btn-full-width">
+          ➕ Create This Match
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!loading && suggestions.length === 0 && !error" class="empty-state">
+    <div class="empty-icon">🔍</div>
+    <h3>No suggestions yet</h3>
+    <p>Select an event and sport, then click "Generate Suggestions" to discover balanced matchups</p>
+  </div>
+</div>

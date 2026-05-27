@@ -1,0 +1,182 @@
+<div class="dashboard-container">
+  <div class="page-header">
+    <h1 class="page-title">🏆 Classement des équipes</h1>
+    <p class="page-subtitle">Hiérarchie claire, contraste fort et lecture rapide des performances</p>
+  </div>
+
+  <section class="search-panel">
+    <div class="search-panel-header">
+      <span>🔎</span>
+      <h2 class="search-panel-title">Recherche avancée</h2>
+    </div>
+
+    <div class="filter-chips">
+      <button class="chip active" type="button" (click)="loadAllClassements()">Tous</button>
+      <button class="chip" type="button">Par événement</button>
+      <button class="chip" type="button">Par sport</button>
+    </div>
+
+    <div class="grid grid-3">
+      <div class="input-group">
+        <label class="label">ID événement</label>
+        <div class="input-with-icon">
+          <span class="input-icon">📅</span>
+          <input class="input-field" type="text" placeholder="Ex: EVENT_01" [(ngModel)]="eventId" />
+        </div>
+      </div>
+
+      <div class="input-group">
+        <label class="label">ID sport</label>
+        <div class="input-with-icon">
+          <span class="input-icon">⚽</span>
+          <input class="input-field" type="text" placeholder="Ex: SPORT_01" [(ngModel)]="sportId" />
+        </div>
+      </div>
+
+      <div class="input-group" style="justify-content: end;">
+        <label class="label">&nbsp;</label>
+        <button class="btn btn-primary" type="button" (click)="searchByEventAndSport()">🔍 Rechercher</button>
+      </div>
+    </div>
+  </section>
+
+  <div *ngIf="error" class="alert alert-error">
+    <span class="alert-icon">⚠️</span>
+    <div>{{ error }}</div>
+  </div>
+
+  <div *ngIf="loading" class="loading-container">
+    <div class="spinner"></div>
+    <p class="loading-text">Chargement du classement...</p>
+  </div>
+
+  <section *ngIf="!loading && classements.length > 0" class="dashboard-card" style="padding: 1.25rem; margin-bottom: 1.5rem;">
+    <h3 class="section-title">📋 Classements disponibles</h3>
+    <div class="grid grid-3">
+      <button
+        *ngFor="let c of classements"
+        type="button"
+        class="card"
+        (click)="selectClassement(c)"
+        [class.selected]="selectedClassement?.id === c.id"
+        style="text-align: left;"
+      >
+        <div style="display: flex; justify-content: space-between; gap: 1rem; margin-bottom: 0.8rem; align-items:start;">
+          <div>
+            <p class="label">Événement</p>
+            <strong>{{ c.eventId }}</strong>
+          </div>
+          <span class="badge badge-primary">{{ c.classements.length }} équipes</span>
+        </div>
+        <p class="page-subtitle">Sport: {{ c.sportId }}</p>
+      </button>
+    </div>
+  </section>
+
+  <section *ngIf="!loading && selectedClassement" class="space-y-lg">
+    <div class="dashboard-card" style="padding: 1.25rem;">
+      <div style="display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; align-items: start;">
+        <div>
+          <h2 class="page-title" style="font-size: 1.8rem; margin-bottom: 0.4rem;">Classement {{ selectedClassement.sportId }}</h2>
+          <p class="page-subtitle">Événement: {{ selectedClassement.eventId }}</p>
+        </div>
+        <div class="badge badge-neutral">{{ selectedClassement.classements.length }} équipes classées</div>
+      </div>
+    </div>
+
+    <div class="table-wrapper">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Rang</th>
+            <th>Équipe</th>
+            <th class="text-center">Matchs</th>
+            <th class="text-center">V-D-N</th>
+            <th class="text-center">Points</th>
+            <th class="text-center">Buts</th>
+            <th class="text-center">Diff.</th>
+            <th class="text-center">Victoire</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let entry of selectedClassement.classements; let i = index">
+            <td>
+              <div style="display:flex; align-items:center; gap:0.75rem; font-weight:800;">
+                <span style="font-size:1.45rem;">{{ getMedalIcon(entry.rang) }}</span>
+                <span>{{ entry.rang }}</span>
+              </div>
+            </td>
+            <td>
+              <div>
+                <div style="font-weight:700;">{{ entry.teamName }}</div>
+                <div class="page-subtitle" style="font-size:0.82rem;">{{ entry.teamId }}</div>
+              </div>
+            </td>
+            <td class="text-center">
+              <span class="badge badge-primary">{{ entry.matchsJoues }}</span>
+            </td>
+            <td>
+              <div style="display:flex; justify-content:center; gap:0.4rem; flex-wrap:wrap;">
+                <span class="badge badge-success">{{ entry.victoires }}</span>
+                <span class="badge badge-danger">{{ entry.defaites }}</span>
+                <span class="badge badge-neutral">{{ entry.nuls }}</span>
+              </div>
+            </td>
+            <td class="text-center"><strong style="font-size:1.25rem; color:var(--primary);">{{ entry.pointsTotal }}</strong></td>
+            <td class="text-center">
+              <div style="display:grid; gap:0.15rem;">
+                <span style="color: var(--success); font-weight:700;">{{ entry.butsMarques }}</span>
+                <span style="color: var(--danger); font-weight:700;">{{ entry.butsEncaisses }}</span>
+              </div>
+            </td>
+            <td class="text-center">
+              <strong [style.color]="entry.differenceButsGoal >= 0 ? 'var(--success)' : 'var(--danger)'">
+                {{ entry.differenceButsGoal >= 0 ? '+' : '' }}{{ entry.differenceButsGoal }}
+              </strong>
+            </td>
+            <td>
+              <div style="display:grid; gap:0.35rem;">
+                <div style="display:flex; justify-content:space-between; align-items:center; gap:0.5rem;">
+                  <span [ngClass]="getWinRateClass(entry.tauxVictoire)" style="font-weight:800;">{{ (entry.tauxVictoire || 0).toFixed(1) }}%</span>
+                  <span style="font-size:0.8rem; color:var(--muted);">performance</span>
+                </div>
+                <div class="progress-bar">
+                  <div class="progress-fill" [style.width.%]="entry.tauxVictoire || 0"></div>
+                </div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="dashboard-card" style="padding: 1.25rem;">
+      <h3 class="section-title">📊 Résumé des statistiques</h3>
+      <div class="grid grid-4">
+        <div class="stat-card">
+          <div class="stat-label">Total matchs</div>
+          <div class="stat-value">{{ getTotalMatches() }}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Meilleure attaque</div>
+          <div class="stat-value">{{ getBestAttack() }}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Meilleure défense</div>
+          <div class="stat-value">{{ getBestDefense() }}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Total buts</div>
+          <div class="stat-value">{{ getTotalGoals() }}</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div *ngIf="!loading && classements.length === 0" class="dashboard-card" style="padding: 3rem 1.5rem; text-align:center;">
+    <div style="font-size:3rem; margin-bottom:0.75rem;">🏆</div>
+    <h3 style="font-size:1.2rem; font-weight:800; margin-bottom:0.5rem;">Aucun classement disponible</h3>
+    <p class="page-subtitle" style="margin-bottom:1.25rem;">Lance une recherche pour afficher les standings.</p>
+    <button class="btn btn-primary" type="button" (click)="loadAllClassements()">↻ Recharger</button>
+  </div>
+</div>

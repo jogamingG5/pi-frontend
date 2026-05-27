@@ -1,0 +1,156 @@
+<div class="dashboard-container">
+  <div class="page-header">
+    <h1 class="page-title">📋 Feuilles de match</h1>
+    <p class="page-subtitle">Résultats, cartons et lecture rapide dans une interface plus claire</p>
+  </div>
+
+  <section class="search-panel">
+    <div class="search-panel-header">
+      <span>🔍</span>
+      <h2 class="search-panel-title">Rechercher une feuille</h2>
+    </div>
+
+    <div class="grid grid-2">
+      <div class="input-group">
+        <label class="label">ID du match</label>
+        <div class="input-with-icon">
+          <span class="input-icon">🎯</span>
+          <input class="input-field" type="text" placeholder="Ex: MATCH_01" [(ngModel)]="matchId" />
+        </div>
+      </div>
+      <div class="input-group" style="justify-content:end;">
+        <label class="label">&nbsp;</label>
+        <button class="btn btn-primary" type="button" (click)="searchByMatchId()">🔎 Rechercher</button>
+      </div>
+    </div>
+  </section>
+
+  <div *ngIf="error" class="alert alert-error">
+    <span class="alert-icon">⚠️</span>
+    <div>{{ error }}</div>
+  </div>
+
+  <div *ngIf="loading" class="loading-container">
+    <div class="spinner"></div>
+    <p class="loading-text">Chargement des feuilles de match...</p>
+  </div>
+
+  <section *ngIf="!loading && feuillesDeMatch.length > 0" class="dashboard-card" style="padding:1.25rem; margin-bottom:1.5rem;">
+    <h3 class="section-title">Matchs disponibles</h3>
+    <div class="grid grid-3">
+      <button
+        *ngFor="let feuille of feuillesDeMatch"
+        type="button"
+        class="card"
+        (click)="selectFeuille(feuille)"
+        [class.selected]="selectedFeuille?.id === feuille.id"
+        style="text-align:left;"
+      >
+        <div style="display:flex; justify-content:space-between; gap:1rem; margin-bottom:0.8rem;">
+          <div>
+            <div style="font-weight:800; font-size:1.05rem;">Match #{{ feuille.matchId }}</div>
+            <div class="page-subtitle" style="font-size:0.82rem;" *ngIf="feuille.dateMatch">{{ feuille.dateMatch | date: 'short' }}</div>
+          </div>
+          <span class="badge badge-primary">{{ getTeamScore(feuille.recap[0]?.teamId || '') }} - {{ getTeamScore(feuille.recap[1]?.teamId || '') }}</span>
+        </div>
+        <p class="page-subtitle" style="font-size:0.82rem;">{{ feuille.note || 'Aucune note ajoutée' }}</p>
+      </button>
+    </div>
+  </section>
+
+  <section *ngIf="!loading && selectedFeuille" class="space-y-lg">
+    <div class="dashboard-card" style="padding:1.25rem;">
+      <div style="display:flex; justify-content:space-between; gap:1rem; flex-wrap:wrap; align-items:start;">
+        <div>
+          <h2 class="page-title" style="font-size:1.8rem; margin-bottom:0.35rem;">Match #{{ selectedFeuille.matchId }}</h2>
+          <p class="page-subtitle" *ngIf="selectedFeuille.dateMatch">{{ selectedFeuille.dateMatch | date: 'long' }}</p>
+        </div>
+        <button class="btn btn-secondary" type="button" (click)="exportToPDF()">📥 Export PDF</button>
+      </div>
+    </div>
+
+    <div class="dashboard-card" style="padding:1.25rem;">
+      <h3 class="section-title">⚽ Résultat final</h3>
+      <div class="grid grid-3">
+        <div class="card" style="text-align:center;">
+          <div class="page-subtitle" style="margin-bottom:0.5rem;">{{ selectedFeuille.recap[0]?.teamId }}</div>
+          <div style="font-size:3rem; font-weight:800; color:var(--primary);">{{ selectedFeuille.recap[0]?.score }}</div>
+        </div>
+        <div class="card" style="display:flex; align-items:center; justify-content:center; flex-direction:column; gap:0.25rem; background:#f7fbff;">
+          <div style="font-size:1.8rem; font-weight:800; color:#8aa0b8;">VS</div>
+          <div class="page-subtitle">Final</div>
+        </div>
+        <div class="card" style="text-align:center;">
+          <div class="page-subtitle" style="margin-bottom:0.5rem;">{{ selectedFeuille.recap[1]?.teamId }}</div>
+          <div style="font-size:3rem; font-weight:800; color:var(--danger);">{{ selectedFeuille.recap[1]?.score }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid grid-2">
+      <div *ngFor="let team of selectedFeuille.recap" class="dashboard-card" style="padding:1.25rem;">
+        <div style="display:flex; justify-content:space-between; align-items:start; gap:1rem; margin-bottom:1rem;">
+          <div>
+            <h3 class="section-title" style="margin-bottom:0.35rem;">{{ team.teamId }}</h3>
+            <p class="page-subtitle">Analyse disciplinaire de l’équipe</p>
+          </div>
+          <span class="badge badge-primary">Score {{ team.score }}</span>
+        </div>
+
+        <div class="grid" style="gap:0.75rem;">
+          <div class="card" style="display:flex; justify-content:space-between; align-items:center; padding:0.9rem 1rem;">
+            <strong>Score</strong>
+            <span class="badge badge-primary">{{ team.score }}</span>
+          </div>
+          <div class="card" style="display:flex; justify-content:space-between; align-items:center; padding:0.9rem 1rem;">
+            <strong>Cartes jaunes</strong>
+            <span class="badge badge-warning">{{ team.nbCartesJaunes || team.playerbookedYellowCards.length || 0 }}</span>
+          </div>
+          <div class="card" style="display:flex; justify-content:space-between; align-items:center; padding:0.9rem 1rem;">
+            <strong>Cartes rouges</strong>
+            <span class="badge badge-danger">{{ team.nbCartesRouges || team.playerbookedRedCards.length || 0 }}</span>
+          </div>
+          <div class="card" style="padding:0.9rem 1rem;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
+              <strong>État disciplinaire</strong>
+              <span class="page-subtitle" style="font-size:0.8rem;">statut</span>
+            </div>
+            <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+              <span *ngIf="(team.nbCartesJaunes || team.playerbookedYellowCards.length || 0) > 2" class="badge badge-warning">⚠️ Attention</span>
+              <span *ngIf="(team.nbCartesRouges || team.playerbookedRedCards.length || 0) > 0" class="badge badge-danger">🚫 Expulsion</span>
+              <span *ngIf="(team.nbCartesJaunes || team.playerbookedYellowCards.length || 0) <= 2 && (team.nbCartesRouges || team.playerbookedRedCards.length || 0) === 0" class="badge badge-success">✓ Bon standing</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dashboard-card" style="padding:1rem 1.25rem;">
+      <div class="grid grid-3">
+        <div>
+          <div class="label">Créée le</div>
+          <div>{{ selectedFeuille.createdAt | date: 'short' }}</div>
+        </div>
+        <div>
+          <div class="label">Modifiée le</div>
+          <div>{{ selectedFeuille.updatedAt | date: 'short' }}</div>
+        </div>
+        <div *ngIf="selectedFeuille.note">
+          <div class="label">Note</div>
+          <div>{{ selectedFeuille.note }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="button-group">
+      <button class="btn btn-secondary" type="button" (click)="exportToPDF()">📥 Exporter en PDF</button>
+      <button class="btn btn-primary" type="button" (click)="deleteFeuille(selectedFeuille.id || '')">🗑️ Supprimer</button>
+    </div>
+  </section>
+
+  <div *ngIf="!loading && feuillesDeMatch.length === 0" class="dashboard-card" style="padding:3rem 1.5rem; text-align:center;">
+    <div style="font-size:3rem; margin-bottom:0.75rem;">📋</div>
+    <h3 style="font-size:1.2rem; font-weight:800; margin-bottom:0.5rem;">Aucune feuille de match disponible</h3>
+    <p class="page-subtitle">Aucune donnée n’est encore disponible pour l’instant.</p>
+  </div>
+</div>

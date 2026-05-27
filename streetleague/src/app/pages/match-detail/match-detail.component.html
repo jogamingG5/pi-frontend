@@ -1,0 +1,119 @@
+<div class="min-h-screen bg-gray-100 p-6">
+  <!-- Loading State -->
+  @if (loading()) {
+    <app-loading-spinner></app-loading-spinner>
+  } @else {
+    <!-- Error State -->
+    @if (error() === 'Match not found') {
+      <div class="text-center py-16">
+        <h2 class="text-2xl font-bold text-gray-800 mb-4">Match Not Found</h2>
+        <button
+          (click)="goBack()"
+          class="px-6 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition font-semibold"
+        >
+          ← Back to Matches
+        </button>
+      </div>
+    } @else if (error()) {
+      <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
+        {{ error() }}
+      </div>
+    }
+
+    <!-- Match Details -->
+    @if (match() && !error()) {
+      <div class="max-w-2xl">
+        <!-- Header -->
+        <div class="flex justify-between items-start mb-8">
+          <div>
+            <button
+              (click)="goBack()"
+              class="text-blue-500 hover:text-blue-600 font-semibold mb-4"
+            >
+              ← Back to Matches
+            </button>
+            <h1 class="text-3xl font-bold text-gray-800">
+              {{ match()!.team1Id }} vs {{ match()!.team2Id }}
+            </h1>
+          </div>
+          <div class="flex gap-2">
+            <button
+              (click)="onEdit()"
+              class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition font-semibold"
+            >
+              Edit
+            </button>
+            <button
+              (click)="onDelete()"
+              class="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition font-semibold"
+            >
+              Delete
+            </button>
+          </div>
+        </div>
+
+        <!-- Match Information Card -->
+        <div class="bg-white rounded-lg shadow-md p-8">
+          <!-- Score -->
+          <div class="mb-8 text-center">
+            <div class="text-6xl font-bold text-gray-800 mb-4">
+              {{ match()!.scoreTeam1 }} - {{ match()!.scoreTeam2 }}
+            </div>
+            <div class="flex justify-center gap-4">
+              <app-badge [label]="match()!.status" type="status"></app-badge>
+              <app-badge [label]="match()!.type" type="type"></app-badge>
+            </div>
+          </div>
+
+          <!-- Details Grid -->
+          <div class="grid grid-cols-2 gap-6 mb-8 pb-8 border-b border-gray-200">
+            <div>
+              <p class="text-sm text-gray-600 mb-1">Date</p>
+              <p class="text-lg font-semibold text-gray-800">{{ formatDate(match()!.date) }}</p>
+            </div>
+            <div>
+              <p class="text-sm text-gray-600 mb-1">Heure</p>
+              <p class="text-lg font-semibold text-gray-800">{{ match()!.heure }}</p>
+            </div>
+            <div>
+              <p class="text-sm text-gray-600 mb-1">Terrain ID</p>
+              <p class="text-lg font-semibold text-gray-800">{{ match()!.terrainId }}</p>
+            </div>
+            <div>
+              <p class="text-sm text-gray-600 mb-1">Sport ID</p>
+              <p class="text-lg font-semibold text-gray-800">{{ match()!.sportId }}</p>
+            </div>
+          </div>
+
+          <!-- Teams -->
+          <div class="grid grid-cols-2 gap-6">
+            <div>
+              <p class="text-sm text-gray-600 mb-2">Team 1</p>
+              <div class="bg-blue-50 rounded-lg p-4">
+                <p class="text-2xl font-bold text-blue-800">{{ match()!.team1Id }}</p>
+                <p class="text-lg text-blue-600 font-semibold mt-2">Score: {{ match()!.scoreTeam1 }}</p>
+              </div>
+            </div>
+            <div>
+              <p class="text-sm text-gray-600 mb-2">Team 2</p>
+              <div class="bg-green-50 rounded-lg p-4">
+                <p class="text-2xl font-bold text-green-800">{{ match()!.team2Id }}</p>
+                <p class="text-lg text-green-600 font-semibold mt-2">Score: {{ match()!.scoreTeam2 }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Confirm Delete Dialog -->
+      <app-confirm-dialog
+        [isOpen]="showConfirmDelete()"
+        title="Delete Match"
+        message="Are you sure you want to delete this match? This action cannot be undone."
+        confirmText="Delete"
+        (confirmed)="confirmDelete()"
+        (cancelled)="showConfirmDelete.set(false)"
+      ></app-confirm-dialog>
+    }
+  }
+</div>
