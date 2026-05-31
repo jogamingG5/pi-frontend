@@ -14,7 +14,7 @@ pipeline {
             }
         }
 
-        stage('Install Dependencies') {
+        stage('Install') {
             steps {
                 dir('streetleague') {
                     sh 'npm install'
@@ -49,10 +49,26 @@ pipeline {
 
     post {
         success {
-            echo '✅ Frontend Pipeline réussi !'
+            echo "========================================="
+            echo "📧 EMAIL SIMULATION - NOTIFICATION"
+            echo "========================================="
+            echo "✅ Statut: SUCCESS"
+            echo "📁 Projet: ${env.JOB_NAME}"
+            echo "🔢 Build: #${env.BUILD_NUMBER}"
+            echo "🔗 URL: ${env.BUILD_URL}"
+            echo "📧 Destinataire: youssef.zaiene.yz@gmail.com"
+            echo "========================================="
         }
         failure {
-            echo '❌ Frontend Pipeline échoué !'
+            echo "========================================="
+            echo "📧 EMAIL SIMULATION - NOTIFICATION"
+            echo "========================================="
+            echo "❌ Statut: FAILED"
+            echo "📁 Projet: ${env.JOB_NAME}"
+            echo "🔢 Build: #${env.BUILD_NUMBER}"
+            echo "🔗 URL: ${env.BUILD_URL}"
+            echo "📧 Destinataire: youssef.zaiene.yz@gmail.com"
+            echo "========================================="
         }
     }
 }
